@@ -13,19 +13,19 @@ import (
 )
 
 type (
-	Store struct {
+	StoriStore struct {
 		db *mongo.Database
 	}
 )
 
 //NewStoriRepository return client db
-func NewStoriRepository(ctx context.Context, uri string) (*Store, error) {
+func NewStoriRepository(ctx context.Context, uri string) (*StoriStore, error) {
 	mongo, err := newMongoConnection(ctx, uri)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Store{
+	return &StoriStore{
 		db: mongo,
 	}, nil
 }
