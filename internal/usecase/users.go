@@ -20,3 +20,12 @@ func (s StoriUseCase) CreateUser(ctx context.Context, user entity.User) (entity.
 
 	return user, nil
 }
+
+func (s StoriUseCase) GetOneUser(ctx context.Context, userId string) (entity.User, error) {
+	user, err := s.Store.GetOneUser(ctx, userId)
+	if err != nil {
+		return entity.User{}, err
+	}
+
+	return user, nil
+}

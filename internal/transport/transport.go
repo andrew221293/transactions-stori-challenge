@@ -30,6 +30,7 @@ type (
 type StoriUsecase interface {
 	ValidateTransaction(transactions []entity.Transaction) error
 	CreateUser(ctx context.Context, user entity.User) (entity.User, error)
+	GetOneUser(ctx context.Context, userId string) (entity.User, error)
 }
 
 //LocalHost routing
