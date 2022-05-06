@@ -59,6 +59,7 @@ func readCSVFile() ([]entity.Transaction, error) {
 			}
 			emp := entity.Transaction{
 				ID:          idTransaction,
+				UserID:      line[3],
 				Date:        line[1],
 				Transaction: line[2],
 			}
