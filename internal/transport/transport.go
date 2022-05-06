@@ -27,6 +27,7 @@ type (
 
 //StoriUsecase implement the methods of usecase (business logic)
 type StoriUsecase interface {
+	ValidateTransaction(transactions []entity.Transaction) error
 }
 
 //LocalHost routing

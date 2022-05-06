@@ -17,6 +17,11 @@ func (e EchoHandler) Transactions(c echo.Context) error {
 		return err
 	}
 
+	err = e.StoriUseCases.Stori.ValidateTransaction(transactions)
+	if err != nil {
+		return err
+	}
+
 	return c.JSON(http.StatusOK, transactions)
 
 	return nil
