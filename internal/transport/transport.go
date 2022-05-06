@@ -1,6 +1,7 @@
 package transport
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"os"
@@ -28,6 +29,7 @@ type (
 //StoriUsecase implement the methods of usecase (business logic)
 type StoriUsecase interface {
 	ValidateTransaction(transactions []entity.Transaction) error
+	CreateUser(ctx context.Context, user entity.User) (entity.User, error)
 }
 
 //LocalHost routing
@@ -46,6 +48,11 @@ func (r *Router) LocalHost() error {
 			Code:     "e6807c42-3568-41de-a15f-fe0f073ab657",
 		}
 	}))
+
+	//Users
+	base.POST("/users/create", r.Handler.CreateUser)
+
+	//Transactions
 	transaction := base.Group("/transactions")
 	transaction.GET("", r.Handler.Transactions)
 
