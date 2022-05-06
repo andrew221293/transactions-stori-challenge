@@ -1,0 +1,22 @@
+<!-- template.html -->
+<!DOCTYPE html>
+<html>
+<body>
+<img src="stori.jpeg" alt="Italian Trulli">
+<h3>Total balance is:<span>{{.Balance}}</span><br/><br/></h3>
+
+<div>
+    {{ range .Transactions}}
+
+    <h3>Number of transactions in: {{.Month}} <span>{{.Total}}</span><br/> </h3>
+
+    {{ end }}
+</div>
+
+<div>
+    <h3>Average debit amount:<span>{{.Debit}}</span><br/> </h3>
+    <h3>Average credit amount:<span>{{.Credit}}</span><br/> </h3>
+</div>
+
+</body>
+</html>
