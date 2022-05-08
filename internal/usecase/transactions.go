@@ -71,14 +71,16 @@ func (s StoriUseCase) ValidateTransaction(
 
 	totalBalance := totalCharges(total)
 	totalDebitCharges := totalCharges(debit)
+	averageDebit := totalDebitCharges / float64(len(debit))
 	totalCreditCharges := totalCharges(credit)
+	averageCredit := totalCreditCharges / float64(len(debit))
 
 	user, err := s.Store.GetOneUser(ctx, userID)
 	if err != nil {
 		return entity.TransactionHistory{}, err
 	}
 
-	transaction, err := sendEmail(mapPerMonth, totalDebitCharges, totalCreditCharges, totalBalance, user)
+	transaction, err := sendEmail(mapPerMonth, averageDebit, averageCredit, totalBalance, user)
 	if err != nil {
 		return entity.TransactionHistory{}, err
 	}
