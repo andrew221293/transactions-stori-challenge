@@ -12,17 +12,18 @@ import (
 )
 
 func (e EchoHandler) Transactions(c echo.Context) error {
+	ctx := c.Request().Context()
 	transactions, err := readCSVFile()
 	if err != nil {
 		return err
 	}
 
-	err = e.StoriUseCases.Stori.ValidateTransaction(transactions)
+	transaction, err := e.StoriUseCases.Stori.ValidateTransaction(ctx, transactions)
 	if err != nil {
 		return err
 	}
 
-	return c.JSON(http.StatusOK, transactions)
+	return c.JSON(http.StatusOK, transaction)
 
 	return nil
 }

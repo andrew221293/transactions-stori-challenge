@@ -28,7 +28,9 @@ type (
 
 //StoriUsecase implement the methods of usecase (business logic)
 type StoriUsecase interface {
-	ValidateTransaction(transactions []entity.Transaction) error
+	ValidateTransaction(
+		ctx context.Context,
+		transactions []entity.Transaction) (entity.TransactionHistory, error)
 	CreateUser(ctx context.Context, user entity.User) (entity.User, error)
 	GetOneUser(ctx context.Context, userId string) (entity.User, error)
 }

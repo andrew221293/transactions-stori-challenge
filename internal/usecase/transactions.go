@@ -2,60 +2,93 @@ package usecase
 
 import (
 	"bytes"
-	"fmt"
+	"context"
 	"html/template"
 	"net/http"
-	"net/smtp"
+	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/andrew221293/transactions-stori-challenge/internal/entity"
+
+	"github.com/sendgrid/sendgrid-go"
+	"github.com/sendgrid/sendgrid-go/helpers/mail"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-func (s StoriUseCase) ValidateTransaction(transactions []entity.Transaction) error {
+func (s StoriUseCase) ValidateTransaction(
+	ctx context.Context,
+	transactions []entity.Transaction) (entity.TransactionHistory, error) {
 	var debit []float64
 	var credit []float64
-
-	months := make(map[string]string)
+	var total []float64
+	userID := transactions[0].UserID
+	mapPerMonth := make(map[string]int)
 
 	for _, v := range transactions {
 		m := getMonth(v.Date)
 		month := monthsName(m)
-		months[m] = month
+		totalPerMonth := mapPerMonth[month]
+		mapPerMonth[month] = totalPerMonth + 1
+
 		typeTransaction := v.Transaction[0:1]
 		if typeTransaction == "-" {
 			deb := strings.TrimLeft(v.Transaction, "-")
 			d, err := strconv.ParseFloat(deb, 64)
 			if err != nil {
-				return entity.CustomError{
+				return entity.TransactionHistory{}, entity.CustomError{
 					Err:      err,
 					HTTPCode: http.StatusBadRequest,
 					Code:     "d3e601d5-6482-49d6-9996-3d94cbaf740a",
 				}
 			}
 			debit = append(debit, d)
+		} else {
+			cred := strings.TrimLeft(v.Transaction, "+")
+			c, err := strconv.ParseFloat(cred, 64)
+			if err != nil {
+				return entity.TransactionHistory{}, entity.CustomError{
+					Err:      err,
+					HTTPCode: http.StatusBadRequest,
+					Code:     "f31d63ed-34fa-453e-8b2f-e0e13cafe5a0",
+				}
+			}
+			credit = append(credit, c)
 		}
-		cred := strings.TrimLeft(v.Transaction, "+")
-		c, err := strconv.ParseFloat(cred, 64)
+
+		totalTransactions := strings.TrimLeft(v.Transaction, "+")
+		t, err := strconv.ParseFloat(totalTransactions, 64)
 		if err != nil {
-			return entity.CustomError{
+			return entity.TransactionHistory{}, entity.CustomError{
 				Err:      err,
 				HTTPCode: http.StatusBadRequest,
 				Code:     "f31d63ed-34fa-453e-8b2f-e0e13cafe5a0",
 			}
 		}
-		credit = append(credit, c)
+		total = append(total, t)
 	}
 
+	totalBalance := totalCharges(total)
 	totalDebitCharges := totalCharges(debit)
 	totalCreditCharges := totalCharges(credit)
 
-	err := sendEmail(months, totalDebitCharges, totalCreditCharges)
+	user, err := s.Store.GetOneUser(ctx, userID)
 	if err != nil {
-		return err
+		return entity.TransactionHistory{}, err
 	}
 
-	return nil
+	transaction, err := sendEmail(mapPerMonth, totalDebitCharges, totalCreditCharges, totalBalance, user)
+	if err != nil {
+		return entity.TransactionHistory{}, err
+	}
+
+	err = s.Store.InserTransactionHistory(ctx, transaction)
+	if err != nil {
+		return entity.TransactionHistory{}, err
+	}
+
+	return transaction, nil
 }
 
 func getMonth(date string) string {
@@ -107,49 +140,59 @@ func totalCharges(transactions []float64) float64 {
 	return total
 }
 
-func sendEmail(m map[string]string, totalDebit, totalCredit float64) error {
-	// Sender data.
-	from := "storiAndresRomo@gmail.com"
-	password := "4lq43d45INC"
-
-	// Receiver email address.
-	to := []string{
-		"andres_romo93@hotmail.com",
+func sendEmail(
+	m map[string]int,
+	totalDebit,
+	totalCredit,
+	total float64,
+	user entity.User) (entity.TransactionHistory, error) {
+	var transaction entity.TransactionHistory
+	var perMonths []entity.TransactionsPerMonth
+	for k, v := range m {
+		perMonth := entity.TransactionsPerMonth{}
+		perMonth.Month = k
+		perMonth.Total = v
+		perMonths = append(perMonths, perMonth)
 	}
-
-	// smtp server configuration.
-	smtpHost := "smtp.gmail.com"
-	smtpPort := "587"
-
-	// Authentication.
-	auth := smtp.PlainAuth("", from, password, smtpHost)
 
 	t, _ := template.ParseFiles("template.html")
 
 	var body bytes.Buffer
 
-	mimeHeaders := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
-	body.Write([]byte(fmt.Sprintf("Subject: This is a test subject \n%s\n\n", mimeHeaders)))
-
 	t.Execute(&body, struct {
-		Balance      string
+		Balance      float64
 		Transactions []entity.TransactionsPerMonth
-		Debit        string
-		Credit       string
+		Debit        float64
+		Credit       float64
 	}{
-		//TODO Make HTML
+		Balance:      total,
+		Transactions: perMonths,
+		Debit:        totalDebit,
+		Credit:       totalCredit,
 	})
 
-	// Sending email.
-	err := smtp.SendMail(smtpHost+":"+smtpPort, auth, from, to, body.Bytes())
+	from := mail.NewEmail("Andres Quintero", "storiandresromo@gmail.com")
+	subject := "Transacciones"
+	to := mail.NewEmail("Andres Romo", user.Email)
+	plainTextContent := "story challenge"
+	htmlContent := body.String()
+	message := mail.NewSingleEmail(from, subject, to, plainTextContent, htmlContent)
+	client := sendgrid.NewSendClient(os.Getenv("SENDGRID_API_KEY"))
+	_, err := client.Send(message)
 	if err != nil {
-		return entity.CustomError{
+		return transaction, entity.CustomError{
 			Err:      err,
-			HTTPCode: http.StatusInternalServerError,
-			Code:     "2ee64a34-4cd4-49a3-8752-6b454de22a3a",
+			HTTPCode: http.StatusBadRequest,
+			Code:     "2fe11db8-e7fe-445b-8309-24b8b3ea2ecf",
 		}
 	}
-	fmt.Println("Email Sent!")
 
-	return nil
+	transaction.ID = primitive.NewObjectID().Hex()
+	transaction.CreatedAt = primitive.NewDateTimeFromTime(time.Now())
+	transaction.Transactions = perMonths
+	transaction.Balance = total
+	transaction.Debit = totalDebit
+	transaction.Credit = totalCredit
+
+	return transaction, nil
 }
