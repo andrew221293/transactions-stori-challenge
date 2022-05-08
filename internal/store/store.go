@@ -18,7 +18,7 @@ type (
 	}
 )
 
-//NewStoriRepository return client db
+//NewStoriStore return client db
 func NewStoriStore(ctx context.Context, uri string) (*StoriStore, error) {
 	mongo, err := newMongoConnection(ctx, uri)
 	if err != nil {

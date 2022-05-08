@@ -11,6 +11,7 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+// Transactions process and validate the CSV file
 func (e EchoHandler) Transactions(c echo.Context) error {
 	ctx := c.Request().Context()
 	transactions, err := readCSVFile()
@@ -18,6 +19,7 @@ func (e EchoHandler) Transactions(c echo.Context) error {
 		return err
 	}
 
+	// send the transactions to the useCase
 	transaction, err := e.StoriUseCases.Stori.ValidateTransaction(ctx, transactions)
 	if err != nil {
 		return err
@@ -28,7 +30,9 @@ func (e EchoHandler) Transactions(c echo.Context) error {
 	return nil
 }
 
+// readCSVFile handler reading the CSV file
 func readCSVFile() ([]entity.Transaction, error) {
+	// open csv file
 	csvFile, err := os.Open("txns.csv")
 	if err != nil {
 		return nil, entity.CustomError{
@@ -38,6 +42,7 @@ func readCSVFile() ([]entity.Transaction, error) {
 		}
 	}
 
+	// read csv file
 	csvLines, err := csv.NewReader(csvFile).ReadAll()
 	if err != nil {
 		return nil, entity.CustomError{
@@ -46,8 +51,9 @@ func readCSVFile() ([]entity.Transaction, error) {
 			Code:     "8797a4d7-1d4d-42a5-9ce0-99d3992115be",
 		}
 	}
-	var transactionData []entity.Transaction
 
+	var transactionData []entity.Transaction
+	// assign the lines of CSV files to my struct
 	for i, line := range csvLines {
 		if i != 0 {
 			idTransaction, err := strconv.Atoi(line[0])
@@ -60,7 +66,6 @@ func readCSVFile() ([]entity.Transaction, error) {
 			}
 			emp := entity.Transaction{
 				ID:          idTransaction,
-				UserID:      line[3],
 				Date:        line[1],
 				Transaction: line[2],
 			}
