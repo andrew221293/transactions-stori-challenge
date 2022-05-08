@@ -16,4 +16,5 @@ type (
 type StoriStore interface {
 	InsertUser(ctx context.Context, user entity.User) error
 	GetOneUser(ctx context.Context, userId string) (entity.User, error)
+	InserTransactionHistory(ctx context.Context, transaction entity.TransactionHistory) error
 }
