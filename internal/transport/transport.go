@@ -31,8 +31,6 @@ type StoriUsecase interface {
 	ValidateTransaction(
 		ctx context.Context,
 		transactions []entity.Transaction) (entity.TransactionHistory, error)
-	CreateUser(ctx context.Context, user entity.User) (entity.User, error)
-	GetOneUser(ctx context.Context, userId string) (entity.User, error)
 }
 
 //LocalHost routing
@@ -52,10 +50,7 @@ func (r *Router) LocalHost() error {
 		}
 	}))
 
-	//Users
-	base.POST("/users/create", r.Handler.CreateUser)
-
-	//Transactions
+	//Transactions endpoints
 	transaction := base.Group("/transactions")
 	transaction.GET("", r.Handler.Transactions)
 
