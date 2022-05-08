@@ -1,5 +1,5 @@
-Id,Date,Transaction,UserID
-0,7/15,+60.5,627814e1f38f560db0af9dbd
-1,7/28,-10.3,627814e1f38f560db0af9dbd
-2,8/2,-20.46,627814e1f38f560db0af9dbd
-3,8/13,+10,627814e1f38f560db0af9dbd
+Id,Date,Transaction
+0,7/15,+60.5
+1,7/28,-10.3
+2,8/2,-20.46
+3,8/13,+10

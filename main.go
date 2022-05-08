@@ -39,6 +39,7 @@ func main() {
 		mongoHost,
 	)
 
+	// initialize store (DB)
 	storiStore, err := store.NewStoriStore(ctx, uri)
 	if err != nil {
 		log.Fatalf("failed to initialize the stori store: %v", err)

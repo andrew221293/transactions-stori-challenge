@@ -8,6 +8,7 @@ import (
 	"github.com/andrew221293/transactions-stori-challenge/internal/entity"
 )
 
+// InserTransactionHistory save the transaction info in the mongoDB collection
 func (s StoriStore) InserTransactionHistory(ctx context.Context, transaction entity.TransactionHistory) error {
 	collection := s.db.Collection("transactions")
 
