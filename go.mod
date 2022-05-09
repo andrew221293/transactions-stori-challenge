@@ -3,6 +3,7 @@ module github.com/andrew221293/transactions-stori-challenge
 go 1.18
 
 require (
+	github.com/aws/aws-lambda-go v1.31.1
 	github.com/labstack/echo/v4 v4.7.2
 	github.com/sendgrid/sendgrid-go v3.11.1+incompatible
 	go.mongodb.org/mongo-driver v1.9.1

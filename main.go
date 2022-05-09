@@ -16,6 +16,7 @@ import (
 	"github.com/andrew221293/transactions-stori-challenge/internal/usecase"
 
 	"github.com/labstack/echo/v4"
+	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/labstack/echo/v4/middleware"
 )
 
@@ -25,6 +26,10 @@ var genericErrResponse = entity.ResponseError{
 }
 
 func main() {
+	isLocalEnvironment := os.Getenv("_LAMBDA_SERVER_PORT") == "" && os.Getenv("_AWS_LAMBDA_RUNTIME_API") == ""
+	loc, _ := time.LoadLocation("America/New_York")
+	time.Local = loc // -> this is setting the global timezone
+	
 	ctx := context.Background()
 	mongoUser := os.Getenv("MONGO_USER")
 	mongoPass := os.Getenv("MONGO_PASSWORD")
@@ -62,21 +67,26 @@ func main() {
 			},
 		},
 	}
+	
+	if !isLocalEnvironment {
+		router.Start()
+		lambda.Start(router.LambdaHandler)
+	} else {
+		go func() {
+			if err := router.LocalHost(); err != nil {
+				e.Logger.Infof("Shutting down ser")
+			}
+		}()
 
-	go func() {
-		if err := router.LocalHost(); err != nil {
-			e.Logger.Infof("Shutting down ser")
+		quit := make(chan os.Signal, 1)
+		signal.Notify(quit, os.Interrupt)
+		<-quit
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
+		if err := e.Shutdown(ctx); err != nil {
+			e.Logger.Fatal(err)
 		}
-	}()
-
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, os.Interrupt)
-	<-quit
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	if err := e.Shutdown(ctx); err != nil {
-		e.Logger.Fatal(err)
 	}
 }
 
