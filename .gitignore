@@ -2,3 +2,6 @@
 transactions-stori-challenge
 Dockerfile
 main
+main.zip
+.env
+.DS_Store
